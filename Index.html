@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ujian Matematika Kelas 7 - Secure</title>
+<style>
+body,html{margin:0;padding:0;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#121212;color:white;}
+.container{width:95%;max-width:480px;margin:0 auto;padding:10px;height:100%;display:flex;flex-direction:column;justify-content:center;}
+h1{text-align:center;color:#ff4444;}
+input{width:100%;padding:10px;margin:5px 0;border-radius:5px;border:none;font-size:16px;}
+button{padding:10px 20px;margin-top:10px;border:none;border-radius:5px;background:#00ff00;color:#000;font-weight:bold;cursor:pointer;transition:0.2s;}
+button:hover{opacity:0.8;}
+#quizContainer{display:none;flex-direction:column;height:100%;overflow:auto;}
+.timer{font-size:18px;text-align:right;margin-bottom:10px;color:#00ff00;}
+.progress-bar{width:100%;background:#333;height:10px;border-radius:5px;margin-bottom:15px;}
+.progress-fill{height:100%;background:#00ff00;width:0%;border-radius:5px;transition:0.3s;}
+.question-box{background:#1c1c1c;padding:15px;margin-bottom:15px;border-radius:10px;border:1px solid #ff4444;opacity:0;transition:opacity 0.5s;}
+.options button{display:block;width:100%;margin:5px 0;padding:12px;border:none;border-radius:8px;text-align:left;background:#333;color:white;cursor:pointer;transition:0.3s;font-weight:bold;}
+.options button:hover{background:#555;}
+.options button.selected{background:#ff4444;color:white;}
+.nav-buttons{display:flex;justify-content:space-between;margin-top:10px;}
+.nav-buttons button{padding:10px 20px;border:none;border-radius:5px;background:#00ff00;color:#000;font-weight:bold;cursor:pointer;transition:0.2s;}
+.nav-buttons button:disabled{background:#555;color:#ccc;cursor:not-allowed;}
+#result{display:none;text-align:left;margin-top:20px;font-size:16px;color:#00ff00;}
+.correct{color:#00ff00;font-weight:bold;}
+.wrong{color:#ff4444;font-weight:bold;}
+#tokenDisplay{color:#00ff00;margin:5px 0;text-align:center;}
+</style>
+</head>
+<body oncontextmenu="return false;" oncopy="return false;" oncut="return false;" onpaste="return false;">
+
+<div class="container" id="loginContainer">
+  <h1>Login Ujian Matematika</h1>
+  <input type="text" id="username" placeholder="Nama" autocomplete="off">
+  <input type="text" id="tokenInput" placeholder="Token" autocomplete="off">
+  <p id="tokenDisplay"></p>
+  <button id="loginBtn">Login</button>
+</div>
+
+<div class="container" id="quizContainer">
+  <h1>Ujian Matematika Kelas 7</h1>
+  <div class="timer" id="timer">90:00</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  <div id="quiz"></div>
+  <div class="nav-buttons">
+    <button id="back">Back</button>
+    <button id="next">Next</button>
+  </div>
+  <div id="result"></div>
+</div>
+
+<script>
+// ======= TOKEN LOGIN =======
+let validToken = Math.floor(100000 + Math.random()*900000); // 6 digit
+document.getElementById("tokenDisplay").innerText = "Token Anda: "+validToken;
+
+document.getElementById("loginBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("username").value.trim();
+  const token = document.getElementById("tokenInput").value.trim();
+  if(!name || !token){alert("Nama dan token wajib diisi!"); return;}
+  if(token != validToken){alert("Token salah!"); return;}
+  document.getElementById("loginContainer").style.display="none";
+  document.getElementById("quizContainer").style.display="flex";
+  renderQuestion(current);
+});
+
+// ======= SOAL PILIHAN GANDA =======
+const questions = [
+  {q:"Sederhanakan pecahan 18/24.", options:["3/4","2/3","3/5","3/6"], answer:0, explanation:"18/24 dibagi 6 → 3/4"},
+  {q:"Hasil dari 2/5 + 3/10 adalah …", options:["1/2","7/10","5/10","3/5"], answer:1, explanation:"2/5=4/10, 4/10+3/10=7/10"},
+  {q:"Hasil dari 7/8 − 3/8 adalah …", options:["4/8","5/8","3/8","2/8"], answer:0, explanation:"7/8−3/8=4/8=1/2"},
+  {q:"Hasil dari 2/3 × 3/4 adalah …", options:["1/2","1/3","1/4","1/6"], answer:0, explanation:"2*3 / 3*4=6/12=1/2"},
+  {q:"Hasil dari 3/5 ÷ 2/3 adalah …", options:["9/10","6/15","5/6","8/15"], answer:0, explanation:"3/5 ÷ 2/3 = 3/5 × 3/2 = 9/10"}
+  // Tambahkan sisa 35 soal di sini mengikuti format sama
+];
+
+let current=0;
+const selected={};
+const quizDiv = document.getElementById("quiz");
+const progressFill = document.getElementById("progress");
+
+// ======= RENDER SOAL =======
+function renderQuestion(i){
+  quizDiv.innerHTML="";
+  const q=questions[i];
+  const box = document.createElement("div");
+  box.classList.add("question-box");
+  box.style.opacity="0";
+  let html = `<p><b>${i+1}. ${q.q}</b></p><div class="options">`;
+  q.options.forEach((opt,j)=>{
+    const sel = selected[i]===j?"selected":"";
+    html+=`<button class="${sel}" data-opt="${j}">${opt}</button>`;
+  });
+  html+="</div>";
+  box.innerHTML=html;
+  quizDiv.appendChild(box);
+  setTimeout(()=>{box.style.opacity="1";},50);
+
+  document.querySelectorAll(".options button").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      selected[i]=parseInt(btn.dataset.opt);
+      btn.parentElement.querySelectorAll("button").forEach(b=>b.classList.remove("selected"));
+      btn.classList.add("selected");
+    });
+  });
+
+  document.getElementById("back").disabled = i===0;
+  document.getElementById("next").textContent = i===questions.length-1?"Submit":"Next";
+
+  const percent = ((i+1)/questions.length)*100;
+  progressFill.style.width = percent+"%";
+  if(percent>75) progressFill.style.background="#ff4444";
+  else if(percent>50) progressFill.style.background="#ffaa00";
+  else progressFill.style.background="#00ff00";
+}
+
+document.getElementById("back").addEventListener("click",()=>{
+  if(current>0){current--; renderQuestion(current);}
+});
+document.getElementById("next").addEventListener("click",()=>{
+  if(current<questions.length-1){current++; renderQuestion(current);}
+  else submitQuiz();
+});
+
+// ======= TIMER 90 MENIT =======
+let time=90*60;
+const timerDiv=document.getElementById("timer");
+const timerInterval=setInterval(()=>{
+  const m=Math.floor(time/60).toString().padStart(2,'0');
+  const s=(time%60).toString().padStart(2,'0');
+  timerDiv.textContent=`${m}:${s}`;
+  time--;
+  if(time<0){clearInterval(timerInterval); submitQuiz();}
+},1000);
+
+// ======= SUBMIT =======
+function submitQuiz(){
+  clearInterval(timerInterval);
+  let score=0;
+  const resultDiv=document.getElementById("result");
+  resultDiv.style.display="block";
+  let html="<h2>Hasil Ujian:</h2>";
+  questions.forEach((q,i)=>{
+    const user=selected[i];
+    if(user===q.answer){score++;}
+    html+=`<p>${i+1}. ${q.q}<br>
+    Jawaban Anda: <span class="${user===q.answer?'correct':'wrong'}">${user!==undefined?q.options[user]:'-'} </span>
+    | Jawaban Benar: <span class="correct">${q.options[q.answer]}</span><br>
+    Penjelasan: ${q.explanation}</p>`;
+  });
+  html+=`<h3>Nilai Anda: ${score} / ${questions.length}</h3>`;
+  resultDiv.innerHTML=html;
+  quizDiv.style.display="none";
+  document.querySelector(".nav-buttons").style.display="none";
+}
+</script>
+</body>
+</html>
